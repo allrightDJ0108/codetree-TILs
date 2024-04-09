@@ -32,6 +32,9 @@ public class Main {
         }
         
         int result = 0;
+        // 판 위에 이동해야할 계란이 있는지 확인한다.
+        // 계란을 이동한 경우 result를 증가시킨다.
+        // 더이상 이동할 계란이 없으면 종료된다.
         while (checkFunc()){
             result++;
         }
@@ -39,12 +42,14 @@ public class Main {
         System.out.println(result);
     }
 
+    // 판 위에 이동해야할 계란이 있는지 확인한다.
     static boolean checkFunc(){
         visited = new boolean[N][N];
         boolean moved = false;
 
         for (int i=0; i<N; i++){
             for (int j=0; j<N; j++){
+                // 방문하지 않은 칸
                 if (!visited[i][j]){
                     if (EggFunc(i,j)){
                         moved = true;
@@ -53,12 +58,14 @@ public class Main {
             }
         }
 
+        // 판 위에 이동해야할 계란이 없으면 false
         return moved;
     }
 
+    // 판 위에 이동할 계란이 있는지 확인하고, 이동시킨다.
     static boolean EggFunc(int x, int y){
-        Queue<Eggs> q = new LinkedList<>();
-        LinkedList<Eggs> list = new LinkedList<>();
+        Queue<Eggs> q = new LinkedList<>(); // 주변 칸을 탐색해서 그룹을 나눌 때 사용
+        LinkedList<Eggs> list = new LinkedList<>(); // 계란 재분배 시 사용
         q.add(new Eggs(x, y));
         list.add(new Eggs(x,y));
         visited[x][y] = true;
