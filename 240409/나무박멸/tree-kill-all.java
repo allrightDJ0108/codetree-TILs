@@ -51,108 +51,96 @@ public class Main {
                 a[i][j] = b[i][j];
     }
 
-    static void growTrees(){
-        for (int i=0; i<N; i++){
-            for (int j=0; j<N; j++){
-                if (map[i][j] > 0){
-                    int cnt = 0;
-                    for (int d=0; d<4; d++){
-                        int nx = i+dir[d][0];
-                        int ny = j+dir[d][1];
+    static void growTrees() {
+    int[][] temp = new int[N][N];
+    for (int i = 0; i < N; i++) {
+        for (int j = 0; j < N; j++) {
+            temp[i][j] = map[i][j];  // 기존 나무의 수를 복사
+            if (map[i][j] > 0) {
+                int cnt = 0;
+                for (int d = 0; d < 4; d++) {
+                    int nx = i + dir[d][0];
+                    int ny = j + dir[d][1];
+                    if (isInBounds(nx, ny) && map[nx][ny] > 0) cnt++;
+                }
+                temp[i][j] += cnt;  // 임시 배열에 성장한 나무의 수 반영
+            }
+        }
+    }
+    map = temp;  // map 업데이트
+}
 
-                        if (isInBounds(nx, ny)){
-                            if (map[nx][ny] > 0) cnt++;
-                        }
+static void expandTrees() {
+    int[][] temp = new int[N][N];
+    for (int i = 0; i < N; i++) {
+        for (int j = 0; j < N; j++) {
+            temp[i][j] = map[i][j];  // 기존 나무의 수를 복사
+        }
+    }
+
+    for (int i = 0; i < N; i++) {
+        for (int j = 0; j < N; j++) {
+            if (map[i][j] > 0) {
+                List<int[]> emptyCells = new ArrayList<>();
+                for (int d = 0; d < 4; d++) {
+                    int nx = i + dir[d][0];
+                    int ny = j + dir[d][1];
+                    if (isInBounds(nx, ny) && map[nx][ny] == 0) {
+                        emptyCells.add(new int[]{nx, ny});
                     }
+                }
 
-                    map[i][j] += cnt;
+                int treesToSpread = map[i][j] / emptyCells.size();
+                for (int[] cell : emptyCells) {
+                    temp[cell[0]][cell[1]] += treesToSpread;  // 나누어진 나무 수를 빈 칸에 추가
                 }
             }
         }
-        //testFunc(map);
+    }
+    map = temp;  // map 업데이트
+}
+
+static int removeTrees() {
+    int[][] temp = new int[N][N];
+    for (int i = 0; i < N; i++) {
+        for (int j = 0; j < N; j++) {
+            temp[i][j] = map[i][j];  // 기존 나무의 수를 복사
+        }
     }
 
-    static void expandTrees(){
-        Queue<int[]> q = new LinkedList<>();
-        int[][] temp = new int[N][N];
+    int[] area = checkTree();
+    int x = area[0];
+    int y = area[1];
+    int removed = 0;
 
-        for (int i=0; i<N; i++){
-            for (int j=0; j<N; j++){
-                if (temp[i][j] == 0) temp[i][j] = map[i][j];
-                if (map[i][j] > 0){
-                    int cnt = 0;
-                    for (int d=0; d<4; d++){
-                        int nx = i + dir[d][0];
-                        int ny = j + dir[d][1];
+    if (x == -1 && y == -1) return 0; // 박멸할 나무가 없는 경우
 
-                        if (isInBounds(nx, ny)){
-                            if (map[nx][ny] == 0) {
-                                cnt++;
-                                q.add(new int[]{nx, ny, map[i][j]});
-                            }
-                        }
-                        
-                    }
+    // 선택된 위치에 제초제 뿌리기
+    if (temp[x][y] > 0) {
+        removed += temp[x][y];
+        temp[x][y] = -2;  // 제초제 뿌렸다는 표시
+        if (pesticide == null) pesticide = new int[N][N];
+        pesticide[x][y] = C;  // 제초제 지속 기간 설정
+    }
 
-                    while (!q.isEmpty()){
-                        int[] cur = q.poll();
-                        int cx = cur[0];
-                        int cy = cur[1];
-                        int cc = cur[2];
-
-                        temp[cx][cy] += (cc / cnt);
-
-                    }
-
-                }
+    // 대각선 방향으로 제초제 확장
+    for (int d = 0; d < 4; d++) {  // 대각선 4방
+        for (int step = 1; step <= K; step++) {  // 확장 범위 k
+            int nx = x + dirS[d][0] * step;
+            int ny = y + dirS[d][1] * step;
+            if (isInBounds(nx, ny) && temp[nx][ny] >= 0) {
+                removed += temp[nx][ny];
+                temp[nx][ny] = -2;  // 제초제 뿌렸다는 표시
+                pesticide[nx][ny] = C;  // 제초제 지속 기간 설정
+            } else {
+                break;  // 확장 중단
             }
         }
-
-        map = temp;
-        //testFunc(map);
-        
     }
+    map = temp;  // map 업데이트
 
-    static int removeTrees(){
-
-        if (pesticide == null) {
-            pesticide = new int[N][N];
-        }
-
-        int[] area = checkTree();
-        int x = area[0];
-        int y = area[1];
-        int removed = 0;
-
-        if (x == -1 && y == -1) return 0; // 박멸할 나무가 없는 경우
-
-        // 선택된 위치에 제초제 뿌리기
-        if (map[x][y] > 0) {
-            removed += map[x][y];
-            map[x][y] = -2; // 제초제 뿌렸다는 표시
-            pesticide[x][y] = C; // 제초제 지속 기간 설정
-        }
-
-        // 대각선 방향으로 제초제 확장
-        for (int d = 0; d < 4; d++) { // 대각선 4방
-            for (int step = 1; step <= K; step++) { // 확장 범위 k
-                int nx = x + dirS[d][0] * step, ny = y + dirS[d][1] * step;
-                if (isInBounds(nx, ny)) {
-                    if (map[nx][ny] >= 0) { // 나무가 있는 경우
-                        removed += map[nx][ny];
-                        map[nx][ny] = -2; // 제초제 뿌렸다는 표시
-                        pesticide[nx][ny] = C; // 제초제 지속 기간 설정
-                        if (map[nx][ny] == 0) break; // 나무가 없는 경우 확장 중단
-                    } else if (map[nx][ny] == -2) { // 제초제가 이미 뿌려져 있는 경우
-                        pesticide[nx][ny] = C; // 지속 기간만 갱신
-                        break; // 더 이상 확장되지 않음
-                    }
-                }
-            }
-        }
-
-        return removed; // 박멸된 나무의 수 반환
-    }
+    return removed;  // 박멸된 나무의 수 반환
+}
 
     static int[] checkTree(){
         int[][] temp = new int[N][N];
