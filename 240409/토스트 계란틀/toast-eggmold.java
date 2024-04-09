@@ -49,7 +49,6 @@ public class Main {
                     if (EggFunc(i,j)){
                         moved = true;
                     }
-                    //moved = EggFunc(i,j);
                 }
             }
         }
