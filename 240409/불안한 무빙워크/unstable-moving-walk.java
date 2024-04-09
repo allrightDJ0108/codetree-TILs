@@ -8,21 +8,17 @@ public class Main {
 
     static class Belt{
         int d;
-        boolean robot = false;
+        boolean robot;
 
         Belt(int d){
             this.d = d;
+            robot = false;
         }
 
         public void putRobot(){
-            // 현재 로봇이 올려져 있지 않고 내구도가 0보다 클 때
-            if (!robot && d > 0){
-                robot = true;
-                d--;
-                if (d == 0){
-                    zeroCnt++;
-                }
-            }
+            // 현재 칸에 로봇을 올리고 내구도 감소
+            robot = true;
+            d--;
         }
     }
 
@@ -40,7 +36,7 @@ public class Main {
         }
 
         int result = 0;
-        while (zeroCnt < K){
+        while (K > 0){
             MoveBelt();
             MoveRobot();
             result++;
@@ -59,19 +55,27 @@ public class Main {
     }
 
     static void MoveRobot(){
-        for (int i = N-2; i >= 0; i--){
+        for (int i = N-1; i > 0; i--){
             Belt cur = list.get(i);
             Belt next = list.get(i+1);
 
+            // 현재 칸에 로봇이 없으면 패스
+            if (!cur.robot) continue;
+
+            // 다음 벨트에 로봇이 있거나 내구도가 0이면 이동 불가
+            if (next.robot || next.d <= 0) continue;
+
             // 현재 있는 로봇을 다음 칸으로 이동
-            if (cur.robot && !next.robot && next.d > 0){
-                cur.robot = false; // 현재 칸에서 내리고
-                next.putRobot(); // 다음 칸에 올려주기
-            }
+            cur.robot = false; // 현재 칸에서 내리고
+            next.putRobot(); // 다음 칸에 올려주기
+            if (next.d <= 0) K--;
+
+            if (i+1 == N-1) next.robot = false;
         }
 
         if (list.get(0).d > 0){
             list.get(0).putRobot();
+            if (list.get(0).d <= 0 ) K--;
         }
     }
 }
