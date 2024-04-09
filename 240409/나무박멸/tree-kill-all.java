@@ -40,9 +40,15 @@ public class Main {
 
     }
 
-    static boolean isWall(int nx, int ny){
+    static boolean isInBounds(int nx, int ny){
         if (nx >= 0 && nx < N && ny >= 0 && ny < N ) return true;
         return false;
+    }
+
+    static void copy(int[][] a, int[][] b) {
+        for (int i = 0; i < N; i++)
+            for (int j = 0; j < N; j++)
+                a[i][j] = b[i][j];
     }
 
     static void growTrees(){
@@ -54,7 +60,7 @@ public class Main {
                         int nx = i+dir[d][0];
                         int ny = j+dir[d][1];
 
-                        if (isWall(nx, ny)){
+                        if (isInBounds(nx, ny)){
                             if (map[nx][ny] > 0) cnt++;
                         }
                     }
@@ -79,7 +85,7 @@ public class Main {
                         int nx = i + dir[d][0];
                         int ny = j + dir[d][1];
 
-                        if (isWall(nx, ny)){
+                        if (isInBounds(nx, ny)){
                             if (map[nx][ny] == 0) {
                                 cnt++;
                                 q.add(new int[]{nx, ny, map[i][j]});
@@ -118,88 +124,82 @@ public class Main {
         int y = area[1];
         int removed = 0;
 
-         // 선택된 위치에 제초제 뿌리기
+        if (x == -1 && y == -1) return 0; // 박멸할 나무가 없는 경우
+
+        // 선택된 위치에 제초제 뿌리기
         if (map[x][y] > 0) {
             removed += map[x][y];
-            map[x][y] = 0; // 나무 박멸
+            map[x][y] = -2; // 제초제 뿌렸다는 표시
             pesticide[x][y] = C; // 제초제 지속 기간 설정
         }
 
-        // 대각선 방향으로 제초제 퍼트리기
-        for (int d = 0; d < 4; d++) {
-            int cx = x;
-            int cy = y;
-
-            for (int step = 1; step <= K; step++) {
-                int nx = cx + dirS[d][0] * step;
-                int ny = cy + dirS[d][1] * step;
-
-                if (!isWall(nx, ny) || map[nx][ny] == -1) break; // 범위를 벗어나거나 벽을 만나면 중단
-
-                if (map[nx][ny] > 0) {
-                    removed += map[nx][ny]; // 나무 박멸
-                    map[nx][ny] = 0;
-                }
-
-                pesticide[nx][ny] = C; // 제초제 지속 기간 설정
-            }
-        }
-
-        // 제초제 지속 기간 감소
-        for (int i = 0; i < N; i++) {
-            for (int j = 0; j < N; j++) {
-                if (pesticide[i][j] > 0) {
-                    pesticide[i][j]--;
-
-                    // 제초제 기간이 끝나면 해당 위치의 제초제 효과 제거
-                    if (pesticide[i][j] == 0) {
-                        map[i][j] = 0; // 이전에 나무가 있었던 자리를 0으로 초기화
+        // 대각선 방향으로 제초제 확장
+        for (int d = 0; d < 4; d++) { // 대각선 4방
+            for (int step = 1; step <= K; step++) { // 확장 범위 k
+                int nx = x + dirS[d][0] * step, ny = y + dirS[d][1] * step;
+                if (isInBounds(nx, ny)) {
+                    if (map[nx][ny] >= 0) { // 나무가 있는 경우
+                        removed += map[nx][ny];
+                        map[nx][ny] = -2; // 제초제 뿌렸다는 표시
+                        pesticide[nx][ny] = C; // 제초제 지속 기간 설정
+                        if (map[nx][ny] == 0) break; // 나무가 없는 경우 확장 중단
+                    } else if (map[nx][ny] == -2) { // 제초제가 이미 뿌려져 있는 경우
+                        pesticide[nx][ny] = C; // 지속 기간만 갱신
+                        break; // 더 이상 확장되지 않음
                     }
                 }
             }
         }
-        
-        return removed;
+
+        return removed; // 박멸된 나무의 수 반환
     }
 
     static int[] checkTree(){
         int[][] temp = new int[N][N];
         int x = 0; int y = 0;
-        int max = 0;
+        int max = -1; // 최댓값 초기화
 
         for (int i=0; i<N; i++){
             for (int j=0; j<N; j++){
                 if (map[i][j] > 0){
                     
 
-                    int sum = map[i][j];
+                    int cnt = map[i][j]; // 현재 위치의 나무 수
 
                     for (int d=0; d<4; d++){
-                        int cx = i;
-                        int cy = j; 
 
                         for (int k=1; k<=K; k++){
-                            int nx = cx + dirS[d][0] * k;
-                            int ny = cy + dirS[d][1] * k;
+                            int nx = i + dirS[d][0] * k;
+                            int ny = j + dirS[d][1] * k;
 
-                            if (!isWall(nx, ny)) break;
-
-                            if (map[nx][ny] == -1 || map[nx][ny] == 0) break;
-
-                            sum += map[nx][ny];
+                            if (isInBounds(nx, ny)) {
+                                if (map[nx][ny] > 0) cnt += map[nx][ny]; // 나무가 있는 경우 카운트 증가
+                                else break; // 나무가 없는 경우(벽, 빈 칸 등) 탐색 중단
+                            }
 
                         }
                     }
 
-                    if (sum > max){
-                        max = sum;
-                        x = i; y = j;
-                    }
+                    temp[i][j] = cnt; // 계산된 값 저장
+                    max = Math.max(max, cnt); // 최댓값 갱신
                 }
             }
         }
 
-        return new int[]{x, y};
+        // 최댓값과 같은 위치 찾기
+        List<int[]> list = new ArrayList<>();
+        for (int i = 0; i < N; i++) {
+            for (int j = 0; j < N; j++) {
+                if (temp[i][j] == max) {
+                    list.add(new int[]{i, j}); // 최댓값을 가진 위치 저장
+                }
+            }
+        }
+
+        // 최적의 위치 선택
+        if (list.isEmpty()) return new int[]{-1, -1}; // 최댓값이 없는 경우
+        list.sort((a, b) -> (a[0] == b[0]) ? a[1] - b[1] : a[0] - b[0]); // 행, 열 기준으로 정렬
+        return list.get(0); // 정렬된 리스트의 첫 번째 원소 반환
     }
 
 
