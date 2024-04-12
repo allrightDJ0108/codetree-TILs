@@ -103,6 +103,9 @@ public class Main {
         for (int i=0; i<n; i++) {
         	for (int j=0; j<n; j++) {
         		int curIdx = visited[i][j] - 1;
+        		
+        		// 인접한 변의 개수를 구하기 위해 전체 탐색
+			// 인접한 칸 중 같은 숫자가 아닌만큼 score를 더해준다.
         		for (int d=0; d<4; d++) {
         			int nx = i + dir[d][0];
         			int ny = j + dir[d][1];
@@ -144,16 +147,20 @@ public class Main {
     }
 
     static void rotateSquare(int sx, int sy, int mid) {
-    	for (int x=sx; x < sx + mid; x++) {
-    		for (int y=sy; y<sy + mid; y++) {
-    			int ox = x -sx;
-    			int oy = y - sy;
-    			int rx = oy;
-    			int ry = mid - ox - 1;
-    			temp[rx + sx][ry + sy] = map[x][y];
-    		}
-    	}
-    }
+		// 정사각형을 시계방향으로 90' 회전
+		for (int x = sx; x < sx + mid; x++) {
+			for (int y = sy; y < sy + mid; y++) {
+				// Step 1. (sx, sy)를 (0, 0)으로 옮겨주는 변환을 진행합니다. 
+				int ox = x - sx;
+				int oy = y - sy;
+				// Step 2. 변환된 상태에서는 회전 이후의 좌표가 (x, y) -> (y, squareN - x - 1)가 됩니다.
+				int rx = oy;
+				int ry = mid - ox - 1;
+				// Step 3. 다시 (sx, sy)를 더해줍니다.
+				temp[rx + sx][ry + sy] = map[x][y];
+			}
+		}
+	}
 
     static void check(int[][] map){
         for (int i=0; i<n; i++){
